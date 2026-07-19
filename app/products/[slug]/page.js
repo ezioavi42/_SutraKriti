@@ -67,12 +67,12 @@ export default function ProductDetailPage() {
   };
 
   const handleInstagramOrder = () => {
-    const handle = settings?.instagramHandle || 'sutrakriti';
-    window.open(`https://instagram.com/${handle}`, '_blank');
+    const handle = settings?.instagramHandle || '_sutrakriti';
+    window.open(`https://www.instagram.com/${handle}`, '_blank');
   };
 
   const handleEmailOrder = () => {
-    const email = settings?.email || 'orders@sutrakriti.com';
+    const email = settings?.email || 'sutrakriti.help@outlook.com';
     const subject = `Order Inquiry: ${product.name}`;
     const body = `Hi SutraKriti,\n\nI would like to order:\n\nProduct: ${product.name}\nPrice: ₹${product.price}\nProduct Link: ${window.location.href}\n\nPlease let me know the next steps.\n\nThank you!`;
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

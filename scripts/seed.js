@@ -186,8 +186,8 @@ async function seed() {
           id: uuidv4(),
           type: 'site',
           whatsappNumber: '919876543210',
-          instagramHandle: 'sutrakriti',
-          email: 'orders@sutrakriti.com',
+          instagramHandle: '_sutrakriti',
+          email: 'sutrakriti.help@outlook.com',
           updatedAt: new Date()
         }
       },

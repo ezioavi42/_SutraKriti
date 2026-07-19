@@ -228,7 +228,7 @@ await db.collection('settings').updateOne(
   { $set: {
     whatsappNumber: '919876543210',
     instagramHandle: 'sutrakriti',
-    email: 'orders@sutrakriti.com'
+    email: 'orders@_sutrakriti.com'
   }}
 );
 ```

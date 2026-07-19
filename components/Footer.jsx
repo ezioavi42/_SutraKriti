@@ -54,7 +54,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center space-x-4">
               <a
-                href="https://instagram.com/sutrakriti"
+                href="https://www.instagram.com/_sutrakriti"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
@@ -62,7 +62,7 @@ export default function Footer() {
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="mailto:orders@sutrakriti.com"
+                href="mailto:sutrakriti.help@outlook.com"
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
               >
                 <Mail className="w-5 h-5" />

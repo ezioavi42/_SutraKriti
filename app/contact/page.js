@@ -128,10 +128,10 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-gray-600 mb-2">Send us a detailed message</p>
                     <a
-                      href="mailto:orders@sutrakriti.com"
+                      href="mailto:sutrakriti.help@outlook.com"
                       className="text-[#C8A95A] hover:underline"
                     >
-                      orders@sutrakriti.com
+                      sutrakriti.help@outlook.com
                     </a>
                   </div>
                 </CardContent>
@@ -146,12 +146,12 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">Instagram</h3>
                     <p className="text-gray-600 mb-2">Follow us for inspiration</p>
                     <a
-                      href="https://instagram.com/sutrakriti"
+                      href="https://www.instagram.com/_sutrakriti"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#C8A95A] hover:underline"
                     >
-                      @sutrakriti
+                      @_sutrakriti
                     </a>
                   </div>
                 </CardContent>
