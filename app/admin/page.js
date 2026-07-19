@@ -219,7 +219,7 @@ export default function AdminPage() {
               <CardContent className=\"space-y-4\">
                 <div>
                   <label className=\"block text-sm font-medium mb-2\">WhatsApp Number</label>
-                  <Input placeholder=\"919876543210\" className=\"border-[#E9DCC9]\" />
+                  <Input placeholder=\"917777932385\" className=\"border-[#E9DCC9]\" />
                 </div>
                 <div>
                   <label className=\"block text-sm font-medium mb-2\">Instagram Handle</label>

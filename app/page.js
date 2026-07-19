@@ -415,7 +415,7 @@ export default function HomePage() {
               className="bg-white text-[#C8A95A] hover:bg-gray-100 px-8 py-6 font-semibold"
               asChild
             >
-              <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer">
                 Order on WhatsApp
               </a>
             </Button>

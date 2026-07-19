@@ -68,7 +68,7 @@ export default function Footer() {
                 <Mail className="w-5 h-5" />
               </a>
               <a
-                href="https://wa.me/919876543210"
+                href="https://wa.me/917777932385"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
@@ -120,7 +120,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
+                <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
                   WhatsApp Support
                 </a>
               </li>

@@ -108,12 +108,12 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">WhatsApp</h3>
                     <p className="text-gray-600 mb-2">Chat with us for quick responses</p>
                     <a
-                      href="https://wa.me/919876543210"
+                      href="https://wa.me/917777932385"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#C8A95A] hover:underline"
                     >
-                      +91 98765 43210
+                      +91 77779 32385
                     </a>
                   </div>
                 </CardContent>

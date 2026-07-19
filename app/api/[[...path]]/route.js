@@ -668,7 +668,7 @@ async function handleGetSettings() {
       settings = {
         id: uuidv4(),
         type: 'site',
-        whatsappNumber: '919876543210',
+        whatsappNumber: '917777932385',
         instagramHandle: 'sutrakriti',
         email: 'orders@sutrakriti.com',
         updatedAt: new Date()
