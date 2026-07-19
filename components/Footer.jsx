@@ -102,13 +102,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/gallery" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
-                  Gallery
+                <Link href="/blog" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
+                  Blog
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
-                  Blog
+                <Link href="/contact" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
+                  Get in Touch
                 </Link>
               </li>
             </ul>
