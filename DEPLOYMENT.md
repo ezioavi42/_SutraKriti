@@ -104,7 +104,7 @@ CORS_ORIGINS=*
 Current settings in MongoDB:
 ```json
 {
-  "whatsappNumber": "919876543210",
+  "whatsappNumber": "917777932385",
   "instagramHandle": "_sutrakriti",
   "email": "sutrakriti.help@outlook.com"
 }
@@ -251,7 +251,7 @@ db.products.find().pretty()
 # Update settings
 db.settings.updateOne(
   { type: 'site' },
-  { $set: { whatsappNumber: '919876543210' } }
+  { $set: { whatsappNumber: '917777932385' } }
 )
 ```
 

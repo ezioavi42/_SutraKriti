@@ -135,7 +135,7 @@ SutraKriti uses a **direct order approach** instead of online payments:
 ### WhatsApp Integration
 ```javascript
 // Example WhatsApp URL generated
-https://wa.me/919876543210?text=Hi%20SutraKriti,%20I%20would%20like%20to%20order...
+https://wa.me/917777932385?text=Hi%20SutraKriti,%20I%20would%20like%20to%20order...
 ```
 
 ## 🗂️ API Endpoints
@@ -226,7 +226,7 @@ Edit settings via Admin Dashboard or directly update MongoDB:
 await db.collection('settings').updateOne(
   { type: 'site' },
   { $set: {
-    whatsappNumber: '919876543210',
+    whatsappNumber: '917777932385',
     instagramHandle: 'sutrakriti',
     email: 'orders@_sutrakriti.com'
   }}

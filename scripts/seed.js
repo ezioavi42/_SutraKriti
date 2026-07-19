@@ -185,7 +185,7 @@ async function seed() {
         $set: {
           id: uuidv4(),
           type: 'site',
-          whatsappNumber: '919876543210',
+          whatsappNumber: '917777932385',
           instagramHandle: '_sutrakriti',
           email: 'sutrakriti.help@outlook.com',
           updatedAt: new Date()

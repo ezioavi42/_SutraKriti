@@ -60,7 +60,7 @@ export default function ProductDetailPage() {
   };
 
   const handleWhatsAppOrder = () => {
-    const number = settings?.whatsappNumber || '919876543210';
+    const number = settings?.whatsappNumber || '917777932385';
     const message = `Hi SutraKriti, I would like to order: ${product.name} (₹${product.price}). Product link: ${window.location.href}`;
     const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
