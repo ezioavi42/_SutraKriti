@@ -208,7 +208,18 @@ async function handleGetProducts(searchParams) {
       ];
     }
 
-    let cursor = collection.find(query).sort({ createdAt: -1 });
+    let cursor = collection.find(query, {
+      projection: {
+        name: 1,
+        slug: 1,
+        price: 1,
+        images: 1,
+        category: 1,
+        featured: 1,
+        inStock: 1,
+        description: 1
+      }
+    }).sort({ createdAt: -1 });
 
     if (limit > 0) {
       cursor = cursor.limit(limit);
@@ -391,7 +402,21 @@ async function handleCreateOrder(data) {
 async function handleGetOrders() {
   try {
     const collection = await getCollection('orders');
-    const orders = await collection.find({}).sort({ createdAt: -1 }).toArray();
+    const orders = await collection
+      .find({}, { 
+        projection: { 
+          customerName: 1, 
+          customerEmail: 1,
+          customerPhone: 1,
+          productName: 1, 
+          status: 1, 
+          createdAt: 1,
+          message: 1
+        } 
+      })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .toArray();
 
     return NextResponse.json({ orders });
   } catch (error) {
@@ -500,7 +525,20 @@ async function handleContactSubmission(data) {
 async function handleGetBlogPosts() {
   try {
     const collection = await getCollection('blog');
-    const posts = await collection.find({ published: true }).sort({ createdAt: -1 }).toArray();
+    const posts = await collection
+      .find({ published: true }, {
+        projection: {
+          title: 1,
+          slug: 1,
+          excerpt: 1,
+          featuredImage: 1,
+          author: 1,
+          createdAt: 1
+        }
+      })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
 
     return NextResponse.json({ posts });
   } catch (error) {
