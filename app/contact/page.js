@@ -26,6 +26,10 @@ export default function ContactPage() {
     subject: '',
     message: ''
   });
+  
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917777932385';
+  const instagramHandle = process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || '_sutrakriti';
+  const contactEmail = process.env.NEXT_PUBLIC_EMAIL || 'sutrakriti.help@outlook.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -108,7 +112,7 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">WhatsApp</h3>
                     <p className="text-gray-600 mb-2">Chat with us for quick responses</p>
                     <a
-                      href="https://wa.me/917777932385"
+                      href={`https://wa.me/${whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#C8A95A] hover:underline"
@@ -128,10 +132,10 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-gray-600 mb-2">Send us a detailed message</p>
                     <a
-                      href="mailto:sutrakriti.help@outlook.com"
+                      href={`mailto:${contactEmail}`}
                       className="text-[#C8A95A] hover:underline"
                     >
-                      sutrakriti.help@outlook.com
+                      {contactEmail}
                     </a>
                   </div>
                 </CardContent>
@@ -146,12 +150,12 @@ export default function ContactPage() {
                     <h3 className="font-semibold mb-1">Instagram</h3>
                     <p className="text-gray-600 mb-2">Follow us for inspiration</p>
                     <a
-                      href="https://www.instagram.com/_sutrakriti"
+                      href={`https://www.instagram.com/${instagramHandle}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#C8A95A] hover:underline"
                     >
-                      @_sutrakriti
+                      @{instagramHandle}
                     </a>
                   </div>
                 </CardContent>

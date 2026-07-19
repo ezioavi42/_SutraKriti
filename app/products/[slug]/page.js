@@ -60,19 +60,19 @@ export default function ProductDetailPage() {
   };
 
   const handleWhatsAppOrder = () => {
-    const number = settings?.whatsappNumber || '917777932385';
+    const number = settings?.whatsappNumber || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
     const message = `Hi SutraKriti, I would like to order: ${product.name} (₹${product.price}). Product link: ${window.location.href}`;
     const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
   const handleInstagramOrder = () => {
-    const handle = settings?.instagramHandle || '_sutrakriti';
+    const handle = settings?.instagramHandle || process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE;
     window.open(`https://www.instagram.com/${handle}`, '_blank');
   };
 
   const handleEmailOrder = () => {
-    const email = settings?.email || 'sutrakriti.help@outlook.com';
+    const email = settings?.email || process.env.NEXT_PUBLIC_EMAIL;
     const subject = `Order Inquiry: ${product.name}`;
     const body = `Hi SutraKriti,\n\nI would like to order:\n\nProduct: ${product.name}\nPrice: ₹${product.price}\nProduct Link: ${window.location.href}\n\nPlease let me know the next steps.\n\nThank you!`;
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

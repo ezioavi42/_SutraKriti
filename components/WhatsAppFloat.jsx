@@ -19,7 +19,7 @@ export default function WhatsAppFloat() {
   }, []);
 
   const handleClick = () => {
-    const number = settings?.whatsappNumber || '917777932385';
+    const number = settings?.whatsappNumber || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
     const message = 'Hi SutraKriti, I would like to inquire about your handmade crochet products.';
     const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');

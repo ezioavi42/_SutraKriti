@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917777932385';
+  const instagramHandle = process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || '_sutrakriti';
+  const contactEmail = process.env.NEXT_PUBLIC_EMAIL || 'sutrakriti.help@outlook.com';
 
   const handleNewsletterSignup = async (e) => {
     e.preventDefault();
@@ -54,7 +58,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center space-x-4">
               <a
-                href="https://www.instagram.com/_sutrakriti"
+                href={`https://www.instagram.com/${instagramHandle}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
@@ -62,13 +66,13 @@ export default function Footer() {
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="mailto:sutrakriti.help@outlook.com"
+                href={`mailto:${contactEmail}`}
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
               >
                 <Mail className="w-5 h-5" />
               </a>
               <a
-                href="https://wa.me/917777932385"
+                href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#C8A95A] transition-colors"
@@ -120,7 +124,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
+                <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#C8A95A] transition-colors">
                   WhatsApp Support
                 </a>
               </li>

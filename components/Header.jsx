@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917777932385';
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -57,7 +59,7 @@ export default function Header() {
               className="border-[#C8A95A] text-[#C8A95A] hover:bg-[#C8A95A] hover:text-white"
               asChild
             >
-              <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer">
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
                 <Phone className="w-4 h-4 mr-2" />
                 WhatsApp
               </a>
@@ -110,7 +112,7 @@ export default function Header() {
                   className="w-full border-[#C8A95A] text-[#C8A95A]"
                   asChild
                 >
-                  <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer">
+                  <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
                     <Phone className="w-4 h-4 mr-2" />
                     WhatsApp Order
                   </a>

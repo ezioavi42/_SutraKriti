@@ -28,6 +28,8 @@ const staggerContainer = {
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917777932385';
 
   useEffect(() => {
     fetchFeaturedProducts();
@@ -415,7 +417,7 @@ export default function HomePage() {
               className="bg-white text-[#C8A95A] hover:bg-gray-100 px-8 py-6 font-semibold"
               asChild
             >
-              <a href="https://wa.me/917777932385" target="_blank" rel="noopener noreferrer">
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
                 Order on WhatsApp
               </a>
             </Button>
