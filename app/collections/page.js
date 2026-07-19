@@ -32,6 +32,7 @@ export default function CollectionsPage() {
     'Crochet Tote Bags',
     'Crochet Sling Bags',
     'Crochet Potli Bags',
+    'Tech Accessories',
     'Home Décor',
     'Gift Collections'
   ];
