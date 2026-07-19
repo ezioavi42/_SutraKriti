@@ -124,15 +124,14 @@ export default function HomePage() {
           <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" variants={fadeInUp}>
             <Button
               size="lg"
-              className="bg-[#C8A95A] hover:bg-[#B89850] text-white px-8 py-6 text-lg"
+              className="bg-[#C8A95A] hover:bg-[#B89850] text-white px-8 py-6 text-lg font-semibold"
               asChild
             >
               <Link href="/collections">Shop Collections</Link>
             </Button>
             <Button
               size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#C8A95A] px-8 py-6 text-lg"
+              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#C8A95A] px-8 py-6 text-lg font-semibold"
               asChild
             >
               <Link href="/custom-orders">Custom Orders</Link>
@@ -406,15 +405,14 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#C8A95A] px-8 py-6"
+              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#C8A95A] px-8 py-6 font-semibold"
               asChild
             >
               <Link href="/collections">Browse Collections</Link>
             </Button>
             <Button
               size="lg"
-              className="bg-white text-[#C8A95A] hover:bg-gray-100 px-8 py-6"
+              className="bg-white text-[#C8A95A] hover:bg-gray-100 px-8 py-6 font-semibold"
               asChild
             >
               <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer">
