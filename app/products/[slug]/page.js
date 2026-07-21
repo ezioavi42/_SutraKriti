@@ -216,12 +216,12 @@ export default function ProductDetailPage() {
                       <p className="text-sm text-gray-600">Beautiful packaging included</p>
                     </div>
                   </div>
-                  {product.productionTime && (
+                  {product.deliveryTime && (
                     <div className="flex items-start gap-3">
                       <Clock className="w-5 h-5 text-[#C8A95A] mt-1" />
                       <div>
-                        <p className="font-semibold">Production Time</p>
-                        <p className="text-sm text-gray-600">{product.productionTime}</p>
+                        <p className="font-semibold">Delivery Time</p>
+                        <p className="text-sm text-gray-600">{product.deliveryTime}</p>
                       </div>
                     </div>
                   )}
@@ -247,13 +247,39 @@ export default function ProductDetailPage() {
                   {product.materials && (
                     <div>
                       <h3 className="font-semibold mb-2">Materials</h3>
-                      <p className="text-gray-600">{product.materials}</p>
+                      {Array.isArray(product.materials) ? (
+                        <ul className="text-gray-600 list-disc list-inside">
+                          {product.materials.map((material, idx) => (
+                            <li key={idx}>{material}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600">{product.materials}</p>
+                      )}
+                    </div>
+                  )}
+                  {product.features && Array.isArray(product.features) && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Features</h3>
+                      <ul className="text-gray-600 list-disc list-inside">
+                        {product.features.map((feature, idx) => (
+                          <li key={idx}>{feature}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   {product.dimensions && (
                     <div>
                       <h3 className="font-semibold mb-2">Dimensions</h3>
-                      <p className="text-gray-600">{product.dimensions}</p>
+                      {typeof product.dimensions === 'object' && !Array.isArray(product.dimensions) ? (
+                        <ul className="text-gray-600">
+                          {Object.entries(product.dimensions).map(([key, value]) => (
+                            <li key={key}><span className="font-medium capitalize">{key}:</span> {value}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600">{product.dimensions}</p>
+                      )}
                     </div>
                   )}
                 </div>
