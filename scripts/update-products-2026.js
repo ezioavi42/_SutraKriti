@@ -76,9 +76,9 @@ const products = [
     careInstructions: 'Hand wash with cold water and mild detergent. Air dry flat. Avoid machine wash.'
   },
   {
-    slug: 'crochet-potli-bag-pink-floral',
-    name: 'Crochet Potli Bag - Pink Floral',
-    description: 'Elegant handmade crochet potli bag in soft pink with beautiful floral details. Perfect for traditional events, weddings, or adding a feminine touch to your outfit. Features secure drawstring closure and comfortable carrying.',
+    slug: 'crochet-potli-bag-navy-classic',
+    name: 'Crochet Potli Bag - Classic Navy Blue',
+    description: 'Elegant handmade crochet potli bag in rich navy blue with beautiful texture. Perfect for traditional events, weddings, or adding a sophisticated touch to your outfit. Features secure drawstring closure and comfortable carrying.',
     price: 849,
     category: 'Crochet Bags',
     images: [
@@ -89,10 +89,10 @@ const products = [
     ],
     featured: true,
     inStock: true,
-    materials: ['Premium cotton yarn', 'Cotton lining', 'Decorative beads'],
+    materials: ['Premium cotton yarn', 'Cotton lining', 'Drawstring closure'],
     features: [
-      'Soft pink color with floral accents',
-      'Perfect for traditional wear',
+      'Rich navy blue color',
+      'Perfect for traditional and formal wear',
       'Secure drawstring closure',
       'Compact yet spacious',
       'Handcrafted with love'
@@ -103,12 +103,12 @@ const products = [
       weight: '140g'
     },
     deliveryTime: '10-15 days',
-    careInstructions: 'Hand wash with cold water. Air dry away from direct sunlight. Handle decorative elements with care.'
+    careInstructions: 'Hand wash with cold water. Air dry away from direct sunlight. Handle with care.'
   },
   {
-    slug: 'crochet-potli-bag-maroon-classic',
-    name: 'Crochet Potli Bag - Classic Maroon',
-    description: 'Stunning handcrafted crochet potli bag in rich maroon color. Perfect for weddings, festive occasions, or as a stylish everyday accessory. Features intricate crochet work and secure closure.',
+    slug: 'crochet-potli-bag-beige-natural',
+    name: 'Crochet Potli Bag - Natural Beige',
+    description: 'Stunning handcrafted crochet potli bag in natural beige/tan color. Perfect for weddings, festive occasions, or as a versatile everyday accessory. Features intricate crochet work and secure drawstring closure.',
     price: 899,
     category: 'Crochet Bags',
     images: [
@@ -123,11 +123,11 @@ const products = [
     inStock: true,
     materials: ['Premium cotton yarn', 'Cotton lining', 'Drawstring closure'],
     features: [
-      'Rich maroon color',
-      'Intricate crochet detailing',
+      'Natural beige/tan color',
       'Perfect for traditional and contemporary looks',
       'Durable and long-lasting',
-      'Spacious interior'
+      'Spacious interior',
+      'Neutral tone matches any outfit'
     ],
     dimensions: {
       height: 'Approx 22 cm',
