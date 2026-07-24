@@ -166,8 +166,8 @@ export default function HomePage() {
           viewport={{ once: true }}
           variants={staggerContainer}
         >
-          {categories.map((category, index) => (
-            <motion.div key={index} variants={fadeInUp}>
+          {categories.map((category) => (
+            <motion.div key={category.slug} variants={fadeInUp}>
               <Link href={`/collections?category=${category.slug}`}>
                 <Card className="group overflow-hidden cursor-pointer border-[#E9DCC9] hover:shadow-xl transition-all duration-300">
                   <div className="relative h-80 overflow-hidden">
@@ -214,10 +214,10 @@ export default function HomePage() {
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            {features.map((feature, index) => {
+            {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <motion.div key={index} variants={fadeInUp}>
+                <motion.div key={feature.title} variants={fadeInUp}>
                   <Card className="h-full border-[#E9DCC9] hover:shadow-lg transition-shadow">
                     <CardContent className="p-8 text-center">
                       <div className="inline-flex items-center justify-center w-16 h-16 bg-[#C8A95A]/10 rounded-full mb-4">
@@ -264,7 +264,7 @@ export default function HomePage() {
             variants={staggerContainer}
           >
             {products.map((product) => (
-              <motion.div key={product.id} variants={fadeInUp}>
+              <motion.div key={product.slug || product._id} variants={fadeInUp}>
                 <Link href={`/products/${product.slug}`}>
                   <Card className="group overflow-hidden cursor-pointer border-[#E9DCC9] hover:shadow-xl transition-all duration-300">
                     <div className="relative h-80 overflow-hidden">
@@ -368,8 +368,8 @@ export default function HomePage() {
           viewport={{ once: true }}
           variants={staggerContainer}
         >
-          {testimonials.map((testimonial, index) => (
-            <motion.div key={index} variants={fadeInUp}>
+          {testimonials.map((testimonial) => (
+            <motion.div key={testimonial.name} variants={fadeInUp}>
               <Card className="h-full border-[#E9DCC9] hover:shadow-lg transition-shadow">
                 <CardContent className="p-8">
                   <div className="flex items-center mb-4">
