@@ -96,7 +96,7 @@ yarn install
 ```
 
 2. **Configure Environment**
-The `.env` file is already configured:
+Copy `.env.example` to `.env` and fill in local values. Do not commit `.env`:
 ```
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=sutrakriti
@@ -213,7 +213,7 @@ font-sans: 'Inter', sans-serif;
 
 Visit `/admin` to access the admin dashboard.
 
-**Note:** Authentication is not implemented in MVP. Add authentication (e.g., NextAuth.js) for production.
+`/admin` and all administrative API actions require HTTP Basic authentication. Set `ADMIN_USERNAME` and a long, unique `ADMIN_PASSWORD` before deploying. See [DEPLOYMENT.md](DEPLOYMENT.md) for the full production setup.
 
 ## 📝 Customization
 
@@ -256,11 +256,7 @@ curl -X POST http://localhost:3000/api/products \
 The site is deployed and accessible at:
 **https://craft-boutique-26.preview.emergentcf.cloud**
 
-For production deployment:
-1. Set up MongoDB Atlas (cloud database)
-2. Update MONGO_URL in environment
-3. Deploy to Vercel, Netlify, or your preferred host
-4. Update NEXT_PUBLIC_BASE_URL
+For production deployment, use the documented Vercel and MongoDB Atlas setup in [DEPLOYMENT.md](DEPLOYMENT.md). It keeps the initial operational footprint small while preserving authentication, HTTPS, backups, and deployment checks.
 
 ## ✅ MVP Features Completed
 
@@ -283,7 +279,7 @@ For production deployment:
 ## 🚀 Future Enhancements
 
 **Phase 2 (Not in MVP):**
-- [ ] Authentication for admin dashboard
+- [x] Password-protected admin dashboard and administrative APIs
 - [ ] Image upload functionality (Cloudinary integration)
 - [ ] Email notifications (Resend integration)
 - [ ] Blog system (full CMS)

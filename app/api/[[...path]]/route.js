@@ -1,713 +1,429 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getCollection } from '@/lib/db';
+import { getAdminAuthState } from '@/lib/admin-auth';
+import { consumeRateLimit } from '@/lib/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 
-// Helper function to generate slug from name
-function generateSlug(name) {
-  return name
+export const runtime = 'nodejs';
+
+const DEFAULT_SETTINGS = {
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917777932385',
+  instagramHandle: process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || '_sutrakriti',
+  email: process.env.NEXT_PUBLIC_EMAIL || 'orders@sutrakriti.com',
+};
+
+const text = (max, min = 0) => z.string().trim().min(min).max(max);
+const phone = text(32, 7).regex(/^[0-9+()\s-]+$/, 'Enter a valid phone number');
+const email = z.string().trim().email().max(254);
+
+const productSchema = z.object({
+  name: text(160, 1),
+  description: text(5000).default(''),
+  price: z.coerce.number().finite().nonnegative().max(10000000),
+  category: text(100, 1),
+  images: z.array(text(2048, 1)).max(10).default([]),
+  featured: z.boolean().default(false),
+  inStock: z.boolean().default(true),
+  materials: text(1000).default(''),
+  dimensions: text(500).default(''),
+  careInstructions: text(2000).default(''),
+  productionTime: text(200).default(''),
+  customizable: z.boolean().default(false),
+}).strict();
+
+const productUpdateSchema = productSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  'Provide at least one field to update'
+);
+
+const orderSchema = z.object({
+  customerName: text(160, 1),
+  customerEmail: email,
+  customerPhone: phone,
+  productId: text(100, 1),
+  productName: text(160, 1),
+  message: text(3000).default(''),
+}).strict();
+
+const customOrderSchema = z.object({
+  name: text(160, 1),
+  email,
+  phone,
+  whatsapp: text(32).regex(/^[0-9+()\s-]*$/, 'Enter a valid WhatsApp number').default(''),
+  productType: text(100, 1),
+  description: text(5000, 1),
+  colors: text(500).default(''),
+  budget: text(100).default(''),
+  deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')).default(''),
+  referenceImages: z.array(text(2048, 1)).max(5).default([]),
+}).strict();
+
+const contactSchema = z.object({
+  name: text(160, 1),
+  email,
+  phone: text(32).regex(/^[0-9+()\s-]*$/, 'Enter a valid phone number').default(''),
+  subject: text(200, 1),
+  message: text(5000, 1),
+}).strict();
+
+const newsletterSchema = z.object({ email }).strict();
+
+const blogSchema = z.object({
+  title: text(200, 1),
+  content: text(30000, 1),
+  excerpt: text(500).default(''),
+  featuredImage: text(2048).default(''),
+  author: text(120).default('SutraKriti Team'),
+  published: z.boolean().default(false),
+}).strict();
+
+const blogUpdateSchema = blogSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  'Provide at least one field to update'
+);
+
+const settingsSchema = z.object({
+  whatsappNumber: text(32).regex(/^[0-9+()\s-]+$/, 'Enter a valid WhatsApp number').optional(),
+  instagramHandle: text(100).regex(/^[A-Za-z0-9._]+$/, 'Enter a valid Instagram handle').optional(),
+  email: email.optional(),
+}).strict().refine((data) => Object.keys(data).length > 0, 'Provide at least one field to update');
+
+function generateSlug(value) {
+  return value
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim();
+    .replace(/^-|-$/g, '');
 }
 
-// GET / - Health check
-export async function GET(request, { params }) {
-  const urlPath = request.nextUrl.pathname.replace('/api', '');
-  const { searchParams } = new URL(request.url);
+function apiError(message, status) {
+  return NextResponse.json({ error: message }, { status });
+}
 
-  // Root health check
-  if (!urlPath || urlPath === '/' || urlPath === '') {
-    return NextResponse.json({
-      message: 'SutraKriti API is running',
-      status: 'healthy',
-      timestamp: new Date().toISOString()
-    });
+function unauthorized(request) {
+  const auth = getAdminAuthState(request);
+  if (!auth.configured) {
+    return apiError('Admin access is not configured', 503);
   }
 
-  // Products endpoints
-  if (urlPath === '/products') {
-    return handleGetProducts(searchParams);
-  }
+  return new NextResponse('Authentication required', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Basic realm="SutraKriti Admin", charset="UTF-8"' },
+  });
+}
 
-  if (urlPath.startsWith('/products/')) {
-    const slug = urlPath.split('/products/')[1];
-    return handleGetProductBySlug(slug);
-  }
+function requireAdmin(request) {
+  return getAdminAuthState(request).authenticated ? null : unauthorized(request);
+}
 
-  // Categories
-  if (urlPath === '/categories') {
-    return handleGetCategories();
-  }
-
-  // Orders/Enquiries
-  if (urlPath === '/orders') {
-    return handleGetOrders();
-  }
-
-  // Blog
-  if (urlPath === '/blog') {
-    return handleGetBlogPosts();
-  }
-
-  if (urlPath.startsWith('/blog/')) {
-    const slug = urlPath.split('/blog/')[1];
-    return handleGetBlogPostBySlug(slug);
-  }
-
-  // Settings
-  if (urlPath === '/settings') {
-    return handleGetSettings();
-  }
+function rateLimit(request, key, limit) {
+  const result = consumeRateLimit(request, key, limit);
+  if (result.allowed) return null;
 
   return NextResponse.json(
-    { error: 'Endpoint not found', path: urlPath },
-    { status: 404 }
+    { error: 'Too many requests. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(result.retryAfterSeconds) } }
   );
 }
 
-// POST handler
+async function readJson(request, schema) {
+  try {
+    return { data: schema.parse(await request.json()) };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { response: NextResponse.json({ error: 'Invalid request data', details: error.flatten().fieldErrors }, { status: 400 }) };
+    }
+    return { response: apiError('Request body must be valid JSON', 400) };
+  }
+}
+
+function logAndRespond(action, error) {
+  console.error(`API ${action} failed`, error);
+  return apiError('Unable to process your request right now', 500);
+}
+
+export async function GET(request) {
+  const urlPath = request.nextUrl.pathname.replace('/api', '') || '/';
+  const { searchParams } = request.nextUrl;
+
+  if (urlPath === '/') {
+    return NextResponse.json({ status: 'healthy', timestamp: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+  if (urlPath === '/products') return handleGetProducts(searchParams);
+  if (urlPath.startsWith('/products/')) return handleGetProductBySlug(decodeURIComponent(urlPath.slice('/products/'.length)));
+  if (urlPath === '/categories') return handleGetCategories();
+  if (urlPath === '/orders') {
+    const response = requireAdmin(request);
+    return response || handleGetOrders();
+  }
+  if (urlPath === '/blog') return handleGetBlogPosts();
+  if (urlPath.startsWith('/blog/')) return handleGetBlogPostBySlug(decodeURIComponent(urlPath.slice('/blog/'.length)));
+  if (urlPath === '/settings') return handleGetSettings();
+
+  return apiError('Endpoint not found', 404);
+}
+
 export async function POST(request) {
-  try {
-    const urlPath = request.nextUrl.pathname.replace('/api', '');
-    const body = await request.json();
-
-    // Products
-    if (urlPath === '/products') {
-      return handleCreateProduct(body);
-    }
-
-    // Orders/Enquiries
-    if (urlPath === '/orders') {
-      return handleCreateOrder(body);
-    }
-
-    // Custom orders
-    if (urlPath === '/custom-orders') {
-      return handleCreateCustomOrder(body);
-    }
-
-    // Newsletter
-    if (urlPath === '/newsletter') {
-      return handleNewsletterSignup(body);
-    }
-
-    // Contact
-    if (urlPath === '/contact') {
-      return handleContactSubmission(body);
-    }
-
-    // Blog
-    if (urlPath === '/blog') {
-      return handleCreateBlogPost(body);
-    }
-
-    // Settings
-    if (urlPath === '/settings') {
-      return handleUpdateSettings(body);
-    }
-
-    return NextResponse.json(
-      { error: 'Endpoint not found' },
-      { status: 404 }
-    );
-  } catch (error) {
-    console.error('POST error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+  const urlPath = request.nextUrl.pathname.replace('/api', '');
+  const adminOnly = new Set(['/products', '/blog', '/settings']);
+  if (adminOnly.has(urlPath)) {
+    const response = requireAdmin(request);
+    if (response) return response;
   }
+
+  if (urlPath === '/products') return withBody(request, productSchema, handleCreateProduct);
+  if (urlPath === '/orders') return withPublicBody(request, 'orders', 8, orderSchema, handleCreateOrder);
+  if (urlPath === '/custom-orders') return withPublicBody(request, 'custom-orders', 5, customOrderSchema, handleCreateCustomOrder);
+  if (urlPath === '/newsletter') return withPublicBody(request, 'newsletter', 5, newsletterSchema, handleNewsletterSignup);
+  if (urlPath === '/contact') return withPublicBody(request, 'contact', 5, contactSchema, handleContactSubmission);
+  if (urlPath === '/blog') return withBody(request, blogSchema, handleCreateBlogPost);
+  if (urlPath === '/settings') return withBody(request, settingsSchema, handleUpdateSettings);
+
+  return apiError('Endpoint not found', 404);
 }
 
-// PUT handler
 export async function PUT(request) {
-  try {
-    const urlPath = request.nextUrl.pathname.replace('/api', '');
-    const body = await request.json();
+  const response = requireAdmin(request);
+  if (response) return response;
 
-    if (urlPath.startsWith('/products/')) {
-      const id = urlPath.split('/products/')[1];
-      return handleUpdateProduct(id, body);
-    }
+  const urlPath = request.nextUrl.pathname.replace('/api', '');
+  if (urlPath.startsWith('/products/')) return withBody(request, productUpdateSchema, (data) => handleUpdateProduct(urlPath.slice('/products/'.length), data));
+  if (urlPath.startsWith('/blog/')) return withBody(request, blogUpdateSchema, (data) => handleUpdateBlogPost(urlPath.slice('/blog/'.length), data));
+  if (urlPath === '/settings') return withBody(request, settingsSchema, handleUpdateSettings);
 
-    if (urlPath.startsWith('/blog/')) {
-      const id = urlPath.split('/blog/')[1];
-      return handleUpdateBlogPost(id, body);
-    }
-
-    if (urlPath === '/settings') {
-      return handleUpdateSettings(body);
-    }
-
-    return NextResponse.json(
-      { error: 'Endpoint not found' },
-      { status: 404 }
-    );
-  } catch (error) {
-    console.error('PUT error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
-  }
+  return apiError('Endpoint not found', 404);
 }
 
-// DELETE handler
 export async function DELETE(request) {
-  try {
-    const urlPath = request.nextUrl.pathname.replace('/api', '');
+  const response = requireAdmin(request);
+  if (response) return response;
 
-    if (urlPath.startsWith('/products/')) {
-      const id = urlPath.split('/products/')[1];
-      return handleDeleteProduct(id);
-    }
+  const urlPath = request.nextUrl.pathname.replace('/api', '');
+  if (urlPath.startsWith('/products/')) return handleDeleteProduct(urlPath.slice('/products/'.length));
+  if (urlPath.startsWith('/blog/')) return handleDeleteBlogPost(urlPath.slice('/blog/'.length));
 
-    if (urlPath.startsWith('/blog/')) {
-      const id = urlPath.split('/blog/')[1];
-      return handleDeleteBlogPost(id);
-    }
-
-    return NextResponse.json(
-      { error: 'Endpoint not found' },
-      { status: 404 }
-    );
-  } catch (error) {
-    console.error('DELETE error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
-  }
+  return apiError('Endpoint not found', 404);
 }
 
-// Product handlers
+async function withBody(request, schema, handler) {
+  const parsed = await readJson(request, schema);
+  return parsed.response || handler(parsed.data);
+}
+
+async function withPublicBody(request, key, limit, schema, handler) {
+  const response = rateLimit(request, key, limit);
+  if (response) return response;
+  return withBody(request, schema, handler);
+}
+
 async function handleGetProducts(searchParams) {
   try {
     const collection = await getCollection('products');
     const category = searchParams.get('category');
     const featured = searchParams.get('featured');
-    const limit = parseInt(searchParams.get('limit')) || 0;
-    const search = searchParams.get('search');
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '', 10);
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 100) : 100;
+    const search = searchParams.get('search')?.trim().slice(0, 100);
+    const query = {};
 
-    let query = {};
-
-    if (category) {
-      query.category = category;
-    }
-
-    if (featured === 'true') {
-      query.featured = true;
-    }
-
+    if (category) query.category = category.slice(0, 100);
+    if (featured === 'true') query.featured = true;
     if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { description: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
 
-    let cursor = collection.find(query, {
-      projection: {
-        name: 1,
-        slug: 1,
-        price: 1,
-        images: 1,
-        category: 1,
-        featured: 1,
-        inStock: 1,
-        description: 1
-      }
-    }).sort({ createdAt: -1 });
+    const products = await collection.find(query, {
+      projection: { _id: 0, id: 1, name: 1, slug: 1, price: 1, images: 1, category: 1, featured: 1, inStock: 1, description: 1 },
+    }).sort({ createdAt: -1 }).limit(limit).toArray();
 
-    if (limit > 0) {
-      cursor = cursor.limit(limit);
-    }
-
-    const products = await cursor.toArray();
-
-    return NextResponse.json({
-      products,
-      total: products.length
-    });
+    return NextResponse.json({ products, total: products.length }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } });
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch products', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch products', error);
   }
 }
 
 async function handleGetProductBySlug(slug) {
   try {
-    const collection = await getCollection('products');
-    const product = await collection.findOne({ slug });
-
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(product);
+    const product = await (await getCollection('products')).findOne({ slug }, { projection: { _id: 0 } });
+    return product ? NextResponse.json(product, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }) : apiError('Product not found', 404);
   } catch (error) {
-    console.error('Error fetching product:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch product', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch product', error);
   }
 }
 
 async function handleCreateProduct(data) {
   try {
     const collection = await getCollection('products');
-
-    const product = {
-      id: uuidv4(),
-      slug: generateSlug(data.name),
-      name: data.name,
-      description: data.description || '',
-      price: data.price,
-      category: data.category,
-      images: data.images || [],
-      featured: data.featured || false,
-      inStock: data.inStock !== undefined ? data.inStock : true,
-      materials: data.materials || '',
-      dimensions: data.dimensions || '',
-      careInstructions: data.careInstructions || '',
-      productionTime: data.productionTime || '',
-      customizable: data.customizable || false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
+    const slug = generateSlug(data.name);
+    if (await collection.findOne({ slug }, { projection: { _id: 1 } })) return apiError('A product with this name already exists', 409);
+    const product = { id: uuidv4(), slug, ...data, createdAt: new Date(), updatedAt: new Date() };
     await collection.insertOne(product);
-
-    return NextResponse.json(product, { status: 201 });
+    return NextResponse.json({ product: { ...product, _id: undefined } }, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { error: 'Failed to create product', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('create product', error);
   }
 }
 
 async function handleUpdateProduct(id, data) {
   try {
     const collection = await getCollection('products');
-
-    const updateData = {
-      ...data,
-      updatedAt: new Date()
-    };
-
+    const update = { ...data, updatedAt: new Date() };
     if (data.name) {
-      updateData.slug = generateSlug(data.name);
+      update.slug = generateSlug(data.name);
+      const existing = await collection.findOne({ slug: update.slug, id: { $ne: id } }, { projection: { _id: 1 } });
+      if (existing) return apiError('A product with this name already exists', 409);
     }
-
-    const result = await collection.updateOne(
-      { id },
-      { $set: updateData }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Product updated successfully' });
+    const result = await collection.updateOne({ id }, { $set: update });
+    return result.matchedCount ? NextResponse.json({ message: 'Product updated successfully' }) : apiError('Product not found', 404);
   } catch (error) {
-    console.error('Error updating product:', error);
-    return NextResponse.json(
-      { error: 'Failed to update product', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('update product', error);
   }
 }
 
 async function handleDeleteProduct(id) {
   try {
-    const collection = await getCollection('products');
-    const result = await collection.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Product deleted successfully' });
+    const result = await (await getCollection('products')).deleteOne({ id });
+    return result.deletedCount ? NextResponse.json({ message: 'Product deleted successfully' }) : apiError('Product not found', 404);
   } catch (error) {
-    console.error('Error deleting product:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete product', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('delete product', error);
   }
 }
 
-// Categories handler
 async function handleGetCategories() {
   try {
-    const collection = await getCollection('products');
-    const categories = await collection.distinct('category');
-
-    return NextResponse.json({ categories });
+    const categories = await (await getCollection('products')).distinct('category');
+    return NextResponse.json({ categories }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch categories', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch categories', error);
   }
 }
 
-// Order handlers
 async function handleCreateOrder(data) {
   try {
-    const collection = await getCollection('orders');
-
-    const order = {
-      id: uuidv4(),
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      customerPhone: data.customerPhone,
-      productId: data.productId,
-      productName: data.productName,
-      message: data.message || '',
-      status: 'pending',
-      createdAt: new Date()
-    };
-
-    await collection.insertOne(order);
-
-    return NextResponse.json(order, { status: 201 });
+    const order = { id: uuidv4(), ...data, status: 'pending', createdAt: new Date() };
+    await (await getCollection('orders')).insertOne(order);
+    return NextResponse.json({ message: 'Order enquiry received' }, { status: 201 });
   } catch (error) {
-    console.error('Error creating order:', error);
-    return NextResponse.json(
-      { error: 'Failed to create order', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('create order', error);
   }
 }
 
 async function handleGetOrders() {
   try {
-    const collection = await getCollection('orders');
-    const orders = await collection
-      .find({}, { 
-        projection: { 
-          customerName: 1, 
-          customerEmail: 1,
-          customerPhone: 1,
-          productName: 1, 
-          status: 1, 
-          createdAt: 1,
-          message: 1
-        } 
-      })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .toArray();
-
-    return NextResponse.json({ orders });
+    const orders = await (await getCollection('orders')).find({}, { projection: { _id: 0 } }).sort({ createdAt: -1 }).limit(100).toArray();
+    return NextResponse.json({ orders }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch orders', error);
   }
 }
 
-// Custom order handler
 async function handleCreateCustomOrder(data) {
   try {
-    const collection = await getCollection('customOrders');
-
-    const customOrder = {
-      id: uuidv4(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      productType: data.productType,
-      description: data.description,
-      colors: data.colors || '',
-      budget: data.budget || '',
-      deliveryDate: data.deliveryDate || '',
-      referenceImages: data.referenceImages || [],
-      status: 'pending',
-      createdAt: new Date()
-    };
-
-    await collection.insertOne(customOrder);
-
-    return NextResponse.json(customOrder, { status: 201 });
+    await (await getCollection('customOrders')).insertOne({ id: uuidv4(), ...data, status: 'pending', createdAt: new Date() });
+    return NextResponse.json({ message: 'Custom order request received' }, { status: 201 });
   } catch (error) {
-    console.error('Error creating custom order:', error);
-    return NextResponse.json(
-      { error: 'Failed to create custom order', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('create custom order', error);
   }
 }
 
-// Newsletter handler
 async function handleNewsletterSignup(data) {
   try {
     const collection = await getCollection('newsletter');
-
-    // Check if email already exists
-    const existing = await collection.findOne({ email: data.email });
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Email already subscribed' },
-        { status: 400 }
-      );
-    }
-
-    const subscriber = {
-      id: uuidv4(),
-      email: data.email,
-      subscribedAt: new Date()
-    };
-
-    await collection.insertOne(subscriber);
-
-    return NextResponse.json(subscriber, { status: 201 });
+    const result = await collection.updateOne({ email: data.email }, { $setOnInsert: { id: uuidv4(), email: data.email, subscribedAt: new Date() } }, { upsert: true });
+    return NextResponse.json({ message: result.upsertedCount ? 'Subscription created' : 'Already subscribed' }, { status: result.upsertedCount ? 201 : 200 });
   } catch (error) {
-    console.error('Error subscribing to newsletter:', error);
-    return NextResponse.json(
-      { error: 'Failed to subscribe', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('subscribe newsletter', error);
   }
 }
 
-// Contact handler
 async function handleContactSubmission(data) {
   try {
-    const collection = await getCollection('contacts');
-
-    const contact = {
-      id: uuidv4(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone || '',
-      subject: data.subject,
-      message: data.message,
-      status: 'new',
-      createdAt: new Date()
-    };
-
-    await collection.insertOne(contact);
-
-    return NextResponse.json(contact, { status: 201 });
+    await (await getCollection('contacts')).insertOne({ id: uuidv4(), ...data, status: 'new', createdAt: new Date() });
+    return NextResponse.json({ message: 'Message received' }, { status: 201 });
   } catch (error) {
-    console.error('Error submitting contact:', error);
-    return NextResponse.json(
-      { error: 'Failed to submit contact form', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('create contact', error);
   }
 }
 
-// Blog handlers
 async function handleGetBlogPosts() {
   try {
-    const collection = await getCollection('blog');
-    const posts = await collection
-      .find({ published: true }, {
-        projection: {
-          title: 1,
-          slug: 1,
-          excerpt: 1,
-          featuredImage: 1,
-          author: 1,
-          createdAt: 1
-        }
-      })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .toArray();
-
-    return NextResponse.json({ posts });
+    const posts = await (await getCollection('blog')).find({ published: true }, { projection: { _id: 0, id: 1, title: 1, slug: 1, excerpt: 1, featuredImage: 1, author: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(50).toArray();
+    return NextResponse.json({ posts }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
   } catch (error) {
-    console.error('Error fetching blog posts:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch blog posts', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch blog posts', error);
   }
 }
 
 async function handleGetBlogPostBySlug(slug) {
   try {
-    const collection = await getCollection('blog');
-    const post = await collection.findOne({ slug, published: true });
-
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Blog post not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(post);
+    const post = await (await getCollection('blog')).findOne({ slug, published: true }, { projection: { _id: 0 } });
+    return post ? NextResponse.json(post, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }) : apiError('Blog post not found', 404);
   } catch (error) {
-    console.error('Error fetching blog post:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch blog post', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch blog post', error);
   }
 }
 
 async function handleCreateBlogPost(data) {
   try {
     const collection = await getCollection('blog');
-
-    const post = {
-      id: uuidv4(),
-      slug: generateSlug(data.title),
-      title: data.title,
-      content: data.content,
-      excerpt: data.excerpt || '',
-      featuredImage: data.featuredImage || '',
-      author: data.author || 'SutraKriti Team',
-      published: data.published || false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    await collection.insertOne(post);
-
-    return NextResponse.json(post, { status: 201 });
+    const slug = generateSlug(data.title);
+    if (await collection.findOne({ slug }, { projection: { _id: 1 } })) return apiError('A blog post with this title already exists', 409);
+    await collection.insertOne({ id: uuidv4(), slug, ...data, createdAt: new Date(), updatedAt: new Date() });
+    return NextResponse.json({ message: 'Blog post created successfully' }, { status: 201 });
   } catch (error) {
-    console.error('Error creating blog post:', error);
-    return NextResponse.json(
-      { error: 'Failed to create blog post', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('create blog post', error);
   }
 }
 
 async function handleUpdateBlogPost(id, data) {
   try {
     const collection = await getCollection('blog');
-
-    const updateData = {
-      ...data,
-      updatedAt: new Date()
-    };
-
+    const update = { ...data, updatedAt: new Date() };
     if (data.title) {
-      updateData.slug = generateSlug(data.title);
+      update.slug = generateSlug(data.title);
+      const existing = await collection.findOne({ slug: update.slug, id: { $ne: id } }, { projection: { _id: 1 } });
+      if (existing) return apiError('A blog post with this title already exists', 409);
     }
-
-    const result = await collection.updateOne(
-      { id },
-      { $set: updateData }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Blog post not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Blog post updated successfully' });
+    const result = await collection.updateOne({ id }, { $set: update });
+    return result.matchedCount ? NextResponse.json({ message: 'Blog post updated successfully' }) : apiError('Blog post not found', 404);
   } catch (error) {
-    console.error('Error updating blog post:', error);
-    return NextResponse.json(
-      { error: 'Failed to update blog post', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('update blog post', error);
   }
 }
 
 async function handleDeleteBlogPost(id) {
   try {
-    const collection = await getCollection('blog');
-    const result = await collection.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: 'Blog post not found' },
-        { status: 404 }
-      );
-    }
-    return NextResponse.json({ message: 'Blog post deleted successfully' });
+    const result = await (await getCollection('blog')).deleteOne({ id });
+    return result.deletedCount ? NextResponse.json({ message: 'Blog post deleted successfully' }) : apiError('Blog post not found', 404);
   } catch (error) {
-    console.error('Error deleting blog post:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete blog post', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('delete blog post', error);
   }
 }
 
-// Settings handlers
 async function handleGetSettings() {
   try {
-    const collection = await getCollection('settings');
-    let settings = await collection.findOne({ type: 'site' });
-
-    if (!settings) {
-      // Initialize default settings
-      settings = {
-        id: uuidv4(),
-        type: 'site',
-        whatsappNumber: '917777932385',
-        instagramHandle: 'sutrakriti',
-        email: 'orders@sutrakriti.com',
-        updatedAt: new Date()
-      };
-      await collection.insertOne(settings);
-    }
-
-    return NextResponse.json(settings);
+    const settings = await (await getCollection('settings')).findOne({ type: 'site' }, { projection: { _id: 0, whatsappNumber: 1, instagramHandle: 1, email: 1 } });
+    return NextResponse.json({ ...DEFAULT_SETTINGS, ...settings }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
   } catch (error) {
-    console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch settings', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('fetch settings', error);
   }
 }
 
 async function handleUpdateSettings(data) {
   try {
-    const collection = await getCollection('settings');
-
-    const updateData = {
-      ...data,
-      type: 'site',
-      updatedAt: new Date()
-    };
-
-    const result = await collection.updateOne(
+    await (await getCollection('settings')).updateOne(
       { type: 'site' },
-      { $set: updateData },
+      { $set: { ...data, updatedAt: new Date() }, $setOnInsert: { id: uuidv4(), type: 'site' } },
       { upsert: true }
     );
-
     return NextResponse.json({ message: 'Settings updated successfully' });
   } catch (error) {
-    console.error('Error updating settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to update settings', message: error.message },
-      { status: 500 }
-    );
+    return logAndRespond('update settings', error);
   }
 }
