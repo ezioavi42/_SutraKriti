@@ -1,4 +1,4 @@
-const { MongoClient } = require('mongodb');
+const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 
@@ -361,50 +361,58 @@ const products = [
 ];
 
 async function updateProducts() {
-  const client = new MongoClient(process.env.MONGO_URL);
+  const connection = await mysql.createConnection({
+    host: process.env.MYSQL_HOST || process.env.DB_HOST || '127.0.0.1',
+    port: Number(process.env.MYSQL_PORT || process.env.DB_PORT || 3306),
+    user: process.env.MYSQL_USER || process.env.DB_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+    database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'sutrakriti',
+  });
 
   try {
-    await client.connect();
-    console.log('✓ Connected to MongoDB');
+    console.log('✓ Connected to MySQL');
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS app_data (
+        id VARCHAR(255) PRIMARY KEY,
+        collection_name VARCHAR(100) NOT NULL,
+        slug VARCHAR(255) DEFAULT NULL,
+        created_at DATETIME DEFAULT NULL,
+        updated_at DATETIME DEFAULT NULL,
+        payload JSON NOT NULL,
+        INDEX idx_collection_name (collection_name),
+        INDEX idx_slug (slug),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
 
-    const dbName = process.env.DB_NAME || 'sutrakriti';
-    const db = client.db(dbName);
-    console.log(`✓ Using database: ${dbName}`);
-    
-    const productsCollection = db.collection('products');
+    await connection.query('DELETE FROM app_data WHERE collection_name = ?', ['products']);
 
-    // Delete all existing products
-    const deleteResult = await productsCollection.deleteMany({});
-    console.log(`✓ Deleted ${deleteResult.deletedCount} existing products`);
+    for (const product of products) {
+      await connection.query(
+        'INSERT INTO app_data (id, collection_name, slug, created_at, updated_at, payload) VALUES (?, ?, ?, ?, ?, ?)',
+        [product.slug, 'products', product.slug, new Date(), new Date(), JSON.stringify(product)]
+      );
+    }
 
-    // Insert new products
-    const insertResult = await productsCollection.insertMany(products);
-    console.log(`✓ Inserted ${insertResult.insertedCount} new products`);
+    const [rows] = await connection.query('SELECT payload FROM app_data WHERE collection_name = ? ORDER BY created_at', ['products']);
+    const categories = rows.reduce((acc, row) => {
+      const payload = JSON.parse(row.payload);
+      acc[payload.category] = (acc[payload.category] || 0) + 1;
+      return acc;
+    }, {});
 
-    // Create indexes
-    await productsCollection.createIndex({ slug: 1 }, { unique: true });
-    await productsCollection.createIndex({ category: 1 });
-    await productsCollection.createIndex({ featured: 1 });
-    console.log('✓ Created indexes');
-
-    // Display summary
     console.log('\n=== Product Summary ===');
-    const categories = await productsCollection.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } }
-    ]).toArray();
-    
-    categories.forEach(cat => {
-      console.log(`  ${cat._id}: ${cat.count} products`);
+    Object.entries(categories).forEach(([name, count]) => {
+      console.log(`  ${name}: ${count} products`);
     });
 
     console.log('\n✓ Product database updated successfully!');
     console.log(`Total products: ${products.length}`);
-
   } catch (error) {
     console.error('❌ Error updating products:', error);
     throw error;
   } finally {
-    await client.close();
+    await connection.end();
   }
 }
 

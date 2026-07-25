@@ -1,8 +1,11 @@
-const { MongoClient } = require('mongodb');
+const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017';
-const DB_NAME = process.env.DB_NAME || 'sutrakriti';
+const MYSQL_HOST = process.env.MYSQL_HOST || process.env.DB_HOST || '127.0.0.1';
+const MYSQL_PORT = Number(process.env.MYSQL_PORT || process.env.DB_PORT || 3306);
+const MYSQL_USER = process.env.MYSQL_USER || process.env.DB_USER || 'root';
+const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '';
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE || process.env.DB_NAME || 'sutrakriti';
 
 // New image URLs
 const TABLET_SLEEVE_LIFESTYLE = 'https://customer-assets-cm19k8pv.emergentagent.net/job_craft-boutique-26/artifacts/v95zhm0o_image0.jpeg';

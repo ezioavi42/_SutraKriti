@@ -42,7 +42,7 @@ Visit: https://craft-boutique-26.preview.emergentcf.cloud
 - **Settings** - Configure WhatsApp, Instagram, Email
 
 ### 🗄️ Database & Backend
-- **MongoDB** - Fast, flexible NoSQL database
+- **MySQL** - Reliable relational database for products, orders, and site settings
 - **Next.js API Routes** - RESTful endpoints for all operations
 - **Collections:**
   - Products (6 sample products included)
@@ -84,8 +84,8 @@ Visit: https://craft-boutique-26.preview.emergentcf.cloud
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- MongoDB running on localhost:27017
+- Node.js 20+
+- MySQL running locally or reachable from the app
 - Yarn package manager
 
 ### Installation
@@ -98,7 +98,11 @@ yarn install
 2. **Configure Environment**
 Copy `.env.example` to `.env` and fill in local values. Do not commit `.env`:
 ```
-MONGO_URL=mongodb://localhost:27017
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your-local-password
+MYSQL_DATABASE=sutrakriti
 DB_NAME=sutrakriti
 NEXT_PUBLIC_BASE_URL=https://craft-boutique-26.preview.emergentagent.com
 ```
@@ -176,7 +180,7 @@ https://wa.me/917777932385?text=Hi%20SutraKriti,%20I%20would%20like%20to%20order
 - **Language:** JavaScript (React 18.3)
 - **Styling:** Tailwind CSS 3.4 + shadcn/ui
 - **Animations:** Framer Motion 11.18
-- **Database:** MongoDB 6.6
+- **Database:** MySQL 8.x
 - **UI Components:** Radix UI primitives
 - **Forms:** React Hook Form + Zod validation
 - **Icons:** Lucide React
@@ -219,7 +223,7 @@ Visit `/admin` to access the admin dashboard.
 
 ### Update Contact Information
 
-Edit settings via Admin Dashboard or directly update MongoDB:
+Edit settings via Admin Dashboard or directly update MySQL:
 
 ```javascript
 // Update WhatsApp number, Instagram handle, Email
@@ -256,7 +260,7 @@ curl -X POST http://localhost:3000/api/products \
 The site is deployed and accessible at:
 **https://craft-boutique-26.preview.emergentcf.cloud**
 
-For production deployment, use the documented Vercel and MongoDB Atlas setup in [DEPLOYMENT.md](DEPLOYMENT.md). It keeps the initial operational footprint small while preserving authentication, HTTPS, backups, and deployment checks.
+For production deployment, use the documented Vercel and MySQL setup in [DEPLOYMENT.md](DEPLOYMENT.md). It keeps the initial operational footprint small while preserving authentication, HTTPS, backups, and deployment checks.
 
 ## ✅ MVP Features Completed
 
@@ -270,7 +274,7 @@ For production deployment, use the documented Vercel and MongoDB Atlas setup in 
 - ✅ About/Our Story page
 - ✅ Newsletter signup
 - ✅ Admin dashboard (basic)
-- ✅ MongoDB database with seed data
+- ✅ MySQL database with seed data
 - ✅ RESTful API
 - ✅ Responsive design
 - ✅ Premium brand styling
